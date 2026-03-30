@@ -8,13 +8,11 @@ class LoginViewModel:
 
     def registrar(self, nombre, email, password):
         if not nombre or not email or not password:
-            return "Todos los campos son obligatorios"
-        
-        exito = self.repo.registrar_usuario(nombre, email, password)
-        if exito:
+            return "Campos obligatorios vacíos"
+        if self.repo.registrar_usuario(nombre, email, password):
             self.email_service.enviar_bienvenida(email, nombre)
             return "OK"
-        return "Error al registrar (¿Email ya existe?)"
+        return "Error al registrar"
 
     def autenticar(self, email, password):
         user = self.repo.login(email, password)

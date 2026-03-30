@@ -7,6 +7,7 @@ class UsuarioRepository:
 
     def registrar_usuario(self, nombre, email, password):
         conn = self.db.get_connection()
+        if not conn: return False
         cursor = conn.cursor()
         try:
             hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -14,14 +15,14 @@ class UsuarioRepository:
             cursor.execute(query, (nombre, email, hashed))
             conn.commit()
             return True
-        except Exception as e:
-            print(f"Error en DB: {e}")
+        except:
             return False
         finally:
             conn.close()
 
     def login(self, email, password):
         conn = self.db.get_connection()
+        if not conn: return None
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email,))
