@@ -32,3 +32,20 @@ class UsuarioRepository:
             return None
         finally:
             conn.close()
+            
+    def actualizar_password(self, email, nueva_password):
+        conn = self.db.get_connection()
+        if not conn: return False
+        cursor = conn.cursor()
+        try:
+            # Encriptamos la nueva contraseña igual que en el registro
+            hashed = bcrypt.hashpw(nueva_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            query = "UPDATE usuarios SET contrasena = %s WHERE email = %s"
+            cursor.execute(query, (hashed, email))
+            conn.commit()
+            return cursor.rowcount > 0 # Devuelve True si se encontró el email y se actualizó
+        except Exception as e:
+            print(f"Error al actualizar: {e}")
+            return False
+        finally:
+            conn.close()
