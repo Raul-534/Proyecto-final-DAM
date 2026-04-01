@@ -18,7 +18,12 @@ class LoginViewModel:
     def autenticar(self, email, password):
         user = self.repo.login(email, password)
         if user:
-            return {"exito": True, "nombre": user['nombre']}
+            # Extraemos el id_usuario y el nombre que devuelve el repositorio
+            return {
+                "exito": True, 
+                "id_usuario": user['id_usuario'], # Clave vital para la navegación
+                "nombre": user['nombre']
+            }
         return {"exito": False, "mensaje": "Credenciales incorrectas"}
 
     def recuperar_password(self, email):

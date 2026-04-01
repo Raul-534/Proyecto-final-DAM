@@ -1,8 +1,10 @@
 import flet as ft
 from viewmodels.perfil_viewmodel import PerfilViewModel
 
-def PerfilView(page: ft.Page, nombre_usuario, al_calcular, al_volver):
+def PerfilView(page: ft.Page, id_usuario, nombre_usuario, al_calcular, al_volver):
     vm = PerfilViewModel()
+    # Seguimos obteniendo datos por nombre si tu VM así lo requiere, 
+    # aunque lo ideal a futuro sería usar el id_usuario también aquí.
     data = vm.obtener_datos(nombre_usuario)
 
     # Inputs
@@ -32,7 +34,7 @@ def PerfilView(page: ft.Page, nombre_usuario, al_calcular, al_volver):
         # --- VALIDACIÓN DE CAMPOS VACÍOS ---
         if not ed_in.value or not pe_in.value or not al_in.value:
             page.snack_bar = ft.SnackBar(
-                content=ft.Text("⚠️ ¡Ey! No dejes campos vacíos"),
+                content=ft.Text("No dejes campos vacíos"),
                 bgcolor=ft.Colors.ORANGE_700
             )
             page.snack_bar.open = True
@@ -48,13 +50,14 @@ def PerfilView(page: ft.Page, nombre_usuario, al_calcular, al_volver):
             tmb = (10 * p) + (6.25 * a) - (5 * ev) + (5 if gen_radio.value == "hombre" else -161)
             kcal = tmb * float(act_drop.value)
 
-            # Guardado en BD
+            # Guardado en BD (Usamos nombre_usuario como pide tu VM actual)
             if vm.guardar_datos(nombre_usuario, {
                 "peso": p, "altura": a, "edad": ev, "genero": gen_radio.value,
                 "objetivo": "Mantener", "actividad": act_drop.value
             }):
-                # --- REDIRECCIÓN DIRECTA ---
-                al_calcular(nombre_usuario, int(kcal))
+                # --- REDIRECCIÓN CON ID Y NOMBRE ---
+                # Importante: Enviamos el ID para que ResultadoView sepa a quién pertenece
+                al_calcular(id_usuario, nombre_usuario, int(kcal))
                 
         except ValueError:
             page.snack_bar = ft.SnackBar(ft.Text("❌ Introduce números válidos"), bgcolor="red")
@@ -75,10 +78,14 @@ def PerfilView(page: ft.Page, nombre_usuario, al_calcular, al_volver):
             ft.Divider(height=10, color="transparent"),
             ft.Text("ACTIVIDAD", size=12, weight="bold"),
             act_drop,
-            
-            ft.Divider(height=30, color="transparent"),
+             
+            ft.Divider(height=30, color="transparent"), 
             ft.FilledButton("GUARDAR Y VER RESULTADO", width=280, height=55, on_click=validar_y_guardar),
-            ft.TextButton("CANCELAR", on_click=lambda _: al_volver(nombre_usuario))
+            
+            # --- BOTÓN CANCELAR CORREGIDO ---
+            # Ahora envía id_usuario y nombre_usuario para que view_dashboard no de error
+            ft.TextButton("CANCELAR", on_click=lambda _: al_volver(id_usuario, nombre_usuario))
+            
         ], horizontal_alignment="center", alignment="center"),
         expand=True,
         alignment=ft.Alignment.CENTER
