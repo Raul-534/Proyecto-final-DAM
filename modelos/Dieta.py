@@ -19,7 +19,7 @@ class Dieta:
             nombre=row['nombre'],
             objetivo=row['objetivo'],
             kcal=row['kcal'],
-            proteina=row['proteína'], # Mantenemos la tilde si así está en tu DB
+            proteina=row['proteína'],
             carbos=row['carbos'],
             grasas=row['grasas'],
             fecha_creacion=row.get('fecha_creacion')

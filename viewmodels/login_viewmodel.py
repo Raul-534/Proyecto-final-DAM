@@ -1,4 +1,4 @@
-import random # Importación limpia para evitar el AttributeError
+import random
 from repositorios.usuario_repository import UsuarioRepository
 from repositorios.email_service import EmailService
 
@@ -18,10 +18,9 @@ class LoginViewModel:
     def autenticar(self, email, password):
         user = self.repo.login(email, password)
         if user:
-            # Extraemos el id_usuario y el nombre que devuelve el repositorio
             return {
                 "exito": True, 
-                "id_usuario": user['id_usuario'], # Clave vital para la navegación
+                "id_usuario": user['id_usuario'],
                 "nombre": user['nombre']
             }
         return {"exito": False, "mensaje": "Credenciales incorrectas"}
@@ -30,10 +29,8 @@ class LoginViewModel:
         if not email:
             return {"exito": False, "mensaje": "Introduce un email válido"}
         
-        # Generamos código de 6 dígitos
         codigo = str(random.randint(100000, 999999))
         
-        # Intentamos enviar el correo
         enviado = self.email_service.enviar_correo_recuperacion(email, codigo)
         
         if enviado:

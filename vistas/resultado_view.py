@@ -1,6 +1,6 @@
 import flet as ft
 
-def ResultadoView(page: ft.Page, nombre_usuario, kcal, al_volver):
+def ResultadoView(page: ft.Page, id_usuario, nombre_usuario, kcal, al_volver):
     txt_pro = ft.Text("", size=20, weight="bold", color=ft.Colors.ORANGE_400)
     txt_car = ft.Text("", size=20, weight="bold", color=ft.Colors.BLUE_400)
     txt_gra = ft.Text("", size=20, weight="bold", color=ft.Colors.PINK_400)
@@ -71,7 +71,7 @@ def ResultadoView(page: ft.Page, nombre_usuario, kcal, al_volver):
             detalles_container,
             
             ft.Divider(height=20, color="transparent"),
-            ft.FilledButton("VOLVER AL MENÚ", width=280, on_click=lambda _: al_volver(nombre_usuario)),
+            ft.FilledButton("VOLVER AL MENÚ", width=280, on_click=lambda _: al_volver(id_usuario, nombre_usuario)),
         ], horizontal_alignment="center", alignment="center"),
         expand=True,
         alignment=ft.Alignment.CENTER
@@ -100,7 +100,7 @@ def DietasView(page, email_usuario, volver_callback):
             cals = 2800
             prot = peso_usuario * 1.8
             gras = peso_usuario * 1.0
-        else: # Mantener
+        else:
             cals = 2300
             prot = peso_usuario * 2.0
             gras = peso_usuario * 0.9
@@ -114,7 +114,6 @@ def DietasView(page, email_usuario, volver_callback):
         
         page.update()
 
-    # Selector de objetivo
     dd_objetivo = ft.Dropdown(
         label="Mi Objetivo",
         width=300,

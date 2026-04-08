@@ -1,3 +1,6 @@
+from repositorios.database import DatabaseManager
+
+
 class RutinaRepository:
     def __init__(self):
         self.db = DatabaseManager()

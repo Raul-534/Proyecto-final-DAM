@@ -8,7 +8,6 @@ class DietasRepository:
         cursor.execute("SELECT * FROM macros_usuario WHERE usuario_email = %s", (email,))
         res = cursor.fetchone()
         conn.close()
-        # Si no tiene macros, devolvemos unos por defecto
         return res if res else {"calorias_objetivo": 2000, "proteinas_objetivo": 150, "carbos_objetivo": 200, "grasas_objetivo": 60}
 
     def guardar_macros(self, email, cals, prot, carb, gras):

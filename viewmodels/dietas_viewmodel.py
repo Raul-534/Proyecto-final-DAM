@@ -46,19 +46,18 @@ class DietasViewModel:
         
         cursor = None
         try:
-            # Usamos buffered=True por si acaso para asegurar que el cursor limpie resultados
             cursor = conn.cursor(buffered=True)
             sql = "DELETE FROM dietas WHERE id = %s"
             
             cursor.execute(sql, (dieta_id,))
-            conn.commit() # Confirmamos el borrado
+            conn.commit()
             
             return cursor.rowcount > 0
                 
         except Exception as e:
             print(f"Error en DietasViewModel (eliminar): {e}")
             try:
-                conn.rollback() # Intentamos deshacer si algo falló
+                conn.rollback()
             except:
                 pass
             return False
@@ -66,7 +65,7 @@ class DietasViewModel:
             if cursor:
                 cursor.close()
             if conn:
-                conn.close() # ¡Fundamental cerrar la conexión!
+                conn.close()
 
     def listar_dietas(self, email):
         conn = self.db_manager.get_connection()

@@ -10,7 +10,6 @@ def DietasView(page, nombre_usuario, email_usuario, volver_callback, navegar_per
     vm_perfil = PerfilViewModel()
     datos_perfil = [None]
 
-    # --- UI MACROS ---
     txt_calorias = ft.Text("0", size=40, weight="bold", color="blue")
     txt_prot = ft.Text("0/0g", size=12, color="grey")
     txt_carb = ft.Text("0/0g", size=12, color="grey")
@@ -25,9 +24,13 @@ def DietasView(page, nombre_usuario, email_usuario, volver_callback, navegar_per
     )
     
     nombre_dieta_f = ft.TextField(label="Nombre de la dieta", width=300, border_radius=10)
-    lista_dietas_container = ft.Column(scroll="auto", spacing=10, width=330)
+    
+    lista_dietas_container = ft.ListView(
+        spacing=10,
+        expand=True,
+        auto_scroll=False
+    )
 
-    # --- LÓGICA DE CÁLCULO ---
     def calcular_y_mostrar(objetivo, actividad_manual=None):
         if not datos_perfil[0]: return
         p = datos_perfil[0]
@@ -36,13 +39,30 @@ def DietasView(page, nombre_usuario, email_usuario, volver_callback, navegar_per
         factor_actividad = float(actividad_manual) if actividad_manual else float(p['actividad'])
         tdee = tmb * factor_actividad
 
-        if "Bajar" in objetivo: cals = tdee - 500
-        elif "Subir" in objetivo: cals = tdee + 500
-        else: cals = tdee
+        # Calcular kcal totales y definir clave de objetivo
+        if "Bajar" in objetivo: 
+            cals = tdee - 500
+            obj_key = "perder"
+        elif "Subir" in objetivo: 
+            cals = tdee + 500
+            obj_key = "ganar"
+        else: 
+            cals = tdee
+            obj_key = "mantener"
 
-        prot_g = float(p['peso']) * 2.2
-        gras_g = float(p['peso']) * 1.0
-        carb_g = max(0, (cals - (prot_g * 4) - (gras_g * 9)) / 4)
+        # Ratios de macros
+        ratios = {
+            "perder": [0.40, 0.30, 0.30],
+            "mantener": [0.30, 0.40, 0.30],
+            "ganar": [0.25, 0.55, 0.20]
+        }
+        
+        p_pct, c_pct, g_pct = ratios[obj_key]
+        
+        # Calcular los gramos en base a los porcentajes
+        prot_g = (cals * p_pct) / 4
+        carb_g = (cals * c_pct) / 4
+        gras_g = (cals * g_pct) / 9
         
         txt_calorias.value = f"{int(cals)}"
         txt_prot.value = f"0/{int(prot_g)}g"
@@ -86,7 +106,6 @@ def DietasView(page, nombre_usuario, email_usuario, volver_callback, navegar_per
                 lista_dietas_container.controls.append(
                     ft.Container(
                         content=ft.Row([
-                            # Icono y textos (Click para seleccionar)
                             ft.GestureDetector(
                                 mouse_cursor=ft.MouseCursor.CLICK,
                                 on_tap=lambda _, obj=d: seleccionar_dieta(obj),
@@ -95,29 +114,21 @@ def DietasView(page, nombre_usuario, email_usuario, volver_callback, navegar_per
                                     ft.Column([
                                         ft.Text(d.nombre, weight="bold", size=14),
                                         ft.Text(f"{d.kcal} kcal - {d.objetivo}", size=11, color="grey"),
-                                    ], spacing=0, width=180), # Ancho fijo para no empujar el botón
+                                    ], spacing=0, width=180),
                                 ], tight=True)
                             ),
-                            # Botón de borrar (A la derecha)
                             ft.IconButton(
                                 icon=ft.Icons.DELETE_OUTLINE,
                                 icon_color="red",
-                                icon_size=20,
-                                tooltip="Eliminar dieta",
                                 on_click=lambda _, id_dieta=d.id: borrar_dieta_click(id_dieta)
                             )
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                        padding=10, 
-                        bgcolor="#1A1A1A", 
-                        border_radius=10,
+                        padding=10, bgcolor="#1A1A1A", border_radius=10,
                     )
                 )
-        try:
-            lista_dietas_container.update()
-        except:
-            pass
+        try: page.update()
+        except: pass
 
-    # Dropdowns
     dd_objetivo = ft.Dropdown(
         label="Objetivo", width=300, border_radius=10, value="Mantener Peso",
         options=[ft.dropdown.Option("Bajar Peso (Definición)"), ft.dropdown.Option("Mantener Peso"), ft.dropdown.Option("Subir Peso (Volumen)")],
@@ -129,17 +140,6 @@ def DietasView(page, nombre_usuario, email_usuario, volver_callback, navegar_per
         options=[ft.dropdown.Option(key="1.2", text="Sedentario"), ft.dropdown.Option(key="1.55", text="Moderado"), ft.dropdown.Option(key="1.9", text="Atleta")],
         on_select=cambio_parametros
     )
-
-    def eliminar_dieta(self, dieta_id):
-        try:
-            cursor = self.db.cursor()
-            sql = "DELETE FROM dietas WHERE id = %s"
-            cursor.execute(sql, (dieta_id,))
-            self.db.commit()
-            return True
-        except Exception as e:
-            print(f"Error al eliminar dieta: {e}")
-            return False
 
     def guardar_dieta_click(e):
         if not nombre_dieta_f.value:
@@ -154,27 +154,52 @@ def DietasView(page, nombre_usuario, email_usuario, volver_callback, navegar_per
         )
         msg_status.value = "✅ Dieta guardada"; nombre_dieta_f.value = ""; recargar_lista(); page.update()
 
-    layout = ft.Column([
-        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: volver_callback()), ft.Text("NUTRICIÓN Y MACROS", size=22, weight="bold")]),
-        nombre_dieta_f, dd_objetivo, dd_actividad,
-        ft.Container(content=ft.Column([ft.Text("CALORÍAS DIARIAS ESTIMADAS", color="grey", size=12), txt_calorias, ft.ProgressBar(value=0.4, color="blue", width=250)], horizontal_alignment="center"), padding=20, bgcolor="#1A1A1A", border_radius=20, alignment=ft.Alignment.CENTER),
-        ft.Row([ft.Column([ft.Text("PROT", size=11), txt_prot], horizontal_alignment="center"), ft.Column([ft.Text("CARB", size=11), txt_carb], horizontal_alignment="center"), ft.Column([ft.Text("GRAS", size=11), txt_gras], horizontal_alignment="center")], alignment=ft.MainAxisAlignment.SPACE_AROUND),
-        msg_status, btn_ir_perfil,
-        ft.FilledButton("GUARDAR CONFIGURACIÓN", icon=ft.Icons.SAVE, width=300, on_click=guardar_dieta_click),
-        ft.Text("MIS DIETAS GUARDADAS", size=16, weight="bold", color="blue"),
-        lista_dietas_container,
-    ], scroll="auto", spacing=15, horizontal_alignment="center")
-
-    # --- CARGA INICIAL ---
+    #INICIO
     try:
         res = vm_perfil.obtener_datos(nombre_usuario) 
         if res:
             datos_perfil[0] = res
             dd_actividad.value = str(res['actividad'])
             calcular_y_mostrar(dd_objetivo.value)
-        else:
-            txt_calorias.value = "---"; msg_status.value = "⚠️ Perfil no configurado"; msg_status.visible = True; btn_ir_perfil.visible = True
     except: pass
+    recargar_lista()
 
-    recargar_lista() # Ahora no romperá gracias al try/except interno
-    return layout
+    # Layout Principal
+    return ft.Container(
+        expand=True,
+        padding=15,
+        content=ft.Column(
+            [
+                ft.Row([
+                    ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: volver_callback()), 
+                    ft.Text("NUTRICIÓN Y MACROS", size=22, weight="bold")
+                ]),
+                nombre_dieta_f, dd_objetivo, dd_actividad,
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("CALORÍAS DIARIAS ESTIMADAS", color="grey", size=12), 
+                        txt_calorias, 
+                        ft.ProgressBar(value=0.4, color="blue", width=250)
+                    ], horizontal_alignment="center"), 
+                    padding=20, bgcolor="#1A1A1A", border_radius=20, alignment=ft.Alignment.CENTER
+                ),
+                ft.Row([
+                    ft.Column([ft.Text("PROT", size=11), txt_prot], horizontal_alignment="center"), 
+                    ft.Column([ft.Text("CARB", size=11), txt_carb], horizontal_alignment="center"), 
+                    ft.Column([ft.Text("GRAS", size=11), txt_gras], horizontal_alignment="center")
+                ], alignment=ft.MainAxisAlignment.SPACE_AROUND),
+                msg_status, btn_ir_perfil,
+                ft.FilledButton("GUARDAR CONFIGURACIÓN", icon=ft.Icons.SAVE, width=300, on_click=guardar_dieta_click),
+                ft.Text("MIS DIETAS GUARDADAS:", size=11, weight="bold", color="grey"),
+                
+                ft.Container(
+                    content=lista_dietas_container,
+                    expand=True,
+                    height=300
+                ),
+            ], 
+            spacing=10, 
+            horizontal_alignment="center",
+            expand=True
+        )
+    )

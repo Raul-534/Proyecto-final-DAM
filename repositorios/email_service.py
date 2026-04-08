@@ -3,7 +3,6 @@ from email.message import EmailMessage
 
 class EmailService: 
     def __init__(self):
-        # Tus credenciales reales
         self.emisor = "r7965151@gmail.com" 
         self.password = "tmyl ossx qkep sotb"
 

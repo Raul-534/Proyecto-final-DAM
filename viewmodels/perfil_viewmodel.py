@@ -8,7 +8,6 @@ class PerfilViewModel:
         conn = self.db_manager.get_connection()
         if not conn: return None
         try:
-            #buffered=True es vital para evitar errores de lectura
             cursor = conn.cursor(dictionary=True, buffered=True)
             cursor.execute("SELECT id_usuario FROM usuarios WHERE nombre = %s", (nombre_usuario,))
             user = cursor.fetchone()
